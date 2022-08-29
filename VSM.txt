@@ -1,0 +1,88 @@
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from nltk.stem import WordNetLemmatizer
+import string
+from math import log
+
+stop_words = set(stopwords.words('english'))
+documents = [document1, document2, document3, document4]
+
+def preprocess(document):
+  bag_of_words = word_tokenize(document)
+  bag_of_words = [w for w in bag_of_words if w not in string.punctuation]
+  bag_of_words = list(set([w for w in bag_of_words if w.lower() not in stop_words]))
+  p_stemmer = PorterStemmer()
+  for i in range(len(bag_of_words)):
+    bag_of_words[i] = p_stemmer.stem(bag_of_words[i])
+  return bag_of_words
+  
+  
+ unique_words = []
+for i in range(len(documents)):
+  unique_words.extend(preprocess(documents[i]))
+
+unique_words = list(set(unique_words))
+unique_words
+
+
+total_documents = len(documents)
+weighted_inverted_index = {}
+idf_vector = {}
+max_count = [0] * total_documents
+for uni in unique_words:
+  weighted_inverted_index[uni] = [0] * total_documents
+  temp = 0
+  for i in range(total_documents):
+    count = documents[i].count(uni)
+    weighted_inverted_index[uni][i] = count
+    if count > 0:
+      temp += 1
+    if max_count[i] < count:
+      max_count[i] = count
+  idf_vector[uni] = log(total_documents/temp,10)
+
+for key, value in weighted_inverted_index.items():
+  for i in range(len(value)):
+    value[i] = value[i]/max_count[i]*idf_vector[key] 
+
+weighted_inverted_index
+
+
+query_unique_words = preprocess(query)
+
+
+query_weighted_inverted_index = {}
+maxi = 0
+for uni in query_unique_words:
+  count = query.count(uni)
+  query_weighted_inverted_index[uni] = count
+  if maxi < count:
+      maxi = count
+
+for key, value in query_weighted_inverted_index.items():
+    query_weighted_inverted_index[key] = value/maxi*idf_vector[key]
+
+query_weighted_inverted_index
+
+
+import numpy as np
+from numpy.linalg import norm
+
+for i in range(total_documents):
+  doc_vector = []
+  query_vector = []
+  for key, value in weighted_inverted_index.items():
+    doc_vector.append(value[i])
+    query_vector.append(query_weighted_inverted_index.get(key,0))
+  print(doc_vector)
+  print(query_vector)
+
+  cosine = np.dot(doc_vector, query_vector)/(norm(doc_vector)*norm(query_vector))
+  print("Cosine Similarity:", cosine)
