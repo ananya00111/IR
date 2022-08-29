@@ -1,0 +1,57 @@
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from nltk.stem import WordNetLemmatizer
+import string
+
+document1 = "ice cream,  mango,  litchi"
+document2 = "hockey,  cricket,  sport"
+document3 = "litchi,  mango,  chocolate"
+document4 = "ice,  good,  cute"
+query = "hockey and national or sport"
+
+stop_words = set(stopwords.words('english'))
+documents = [document1, document2, document3, document4]
+
+def preprocess(document):
+  bag_of_words = word_tokenize(document)
+  bag_of_words = [w for w in bag_of_words if w not in string.punctuation]
+  bag_of_words = list(set([w for w in bag_of_words if w.lower() not in stop_words]))
+  p_stemmer = PorterStemmer()
+  for i in range(len(bag_of_words)):
+    bag_of_words[i] = p_stemmer.stem(bag_of_words[i])
+  return bag_of_words
+  
+  
+  inverted_index = {}
+for i in range(len(documents)):
+  unique_words = preprocess(documents[i])
+  for uni in unique_words:
+    if uni in inverted_index.keys():
+      inverted_index[uni].append(i+1)
+    else:
+      inverted_index[uni] = [i+1]
+
+print(inverted_index)
+
+
+def queryProcess(words,operators):
+    c=0
+    ans=set(inverted_index[words[c]])
+    for i in operators:
+        if i == "and":
+            ans=ans.intersection(inverted_index[words[c+1]])
+        elif i == "or":
+            ans=ans.union(inverted_index[words[c+1]])
+        elif i == "not":
+            ans=ans.difference(inverted_index[words[c+1]])
+        c+=1
+    return ans
+    
+print(queryProcess(["litchi","ice"], ["not"]))
